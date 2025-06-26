@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+dist/
+build/
+.venv/
+
+.DS_Store
+Thumbs.db
+
+# Secrets & config
+.env
+
+# Logs and temp
+*.log
+*.sqlite3
+*.db
+*.pid
+*.swp
+
+# optional frontend #
+frontend
+data
+.streamlit/
