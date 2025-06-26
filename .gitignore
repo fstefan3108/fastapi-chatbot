@@ -10,7 +10,7 @@ build/
 .DS_Store
 Thumbs.db
 
-app/services/scrape/chromedriver.exe
+chromedriver.exe
 
 # Secrets & config
 .env
