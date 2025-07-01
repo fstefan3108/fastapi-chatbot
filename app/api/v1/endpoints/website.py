@@ -1,11 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from starlette import status
 
-from app.core.security import check_user
+
 from app.crud.crud_website import create_website, get_websites
 from app.schemas.website import WebsiteRequest
-from app.services.scrape.scrape_website import scrape_website
-from app.vectorstore.chroma_client import embed_website_chunks
+from app.utils.validation import check_user
 
 from ...deps import db_dependency, user_dependency
 
@@ -20,22 +19,8 @@ router = APIRouter()
 
 @router.post("/add_website", status_code=status.HTTP_201_CREATED)
 async def add_website_endpoint(website: WebsiteRequest, db: db_dependency, user: user_dependency):
-    check_user(user)
-
-    # scrape website #
-    try:
-        scraped_website = scrape_website(website.url)
-    except Exception as error:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Scrapping failed: {str(error)}")
-
-
-    new_website = create_website(website=website, db=db, user=user, scraped_website=scraped_website) # Calls create_website() from crud_website #
-
-
-    # Embeds website data as an embedding for chromadb #
-    user_id = user.get("id")
-    embed_website_chunks(db, user_id)
-
+    check_user(user=user, status_code=404, detail="User not found.")
+    new_website = create_website(website=website, db=db, user=user)
     return new_website
 
 
@@ -44,7 +29,6 @@ async def add_website_endpoint(website: WebsiteRequest, db: db_dependency, user:
 
 @router.get("/get_websites", status_code=status.HTTP_200_OK)
 async def get_websites_endpoint(db: db_dependency, user: user_dependency):
-    check_user(user)
-
+    check_user(user=user, status_code=404, detail="User not found.")
     websites = get_websites(db=db, user=user) # Calls get_websites() from crud_website #
     return [{"id": website.id, "title": website.title, "url": website.url} for website in websites]

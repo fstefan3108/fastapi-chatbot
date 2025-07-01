@@ -1,4 +1,4 @@
-from app.vectorstore.chroma_client import client
+from app.vectorstore.store_embeddings import client
 
 # Gets passed the prompt, user's id and website's id when the endpoint is called #
 # Fetches the collection with the dynamicaly set name for each user #
@@ -8,11 +8,13 @@ from app.vectorstore.chroma_client import client
 
 def get_embeddings(user_id: int, user_prompt: str, website_id: int):
     collection = client.get_collection(name=f"user_{user_id}_collection")
+
     results = collection.query(
         query_texts=user_prompt,
         n_results=10,
         where={"website_id": website_id},
         include=["documents"]
     )
+
 
     return results["documents"]

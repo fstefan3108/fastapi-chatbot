@@ -12,18 +12,13 @@ url = settings.api_url
 # Deepseek replies #
 
 
-def parse_with_deepseek(context: list[str], user_prompt: str):
-
+def parse_with_deepseek(context: list[str], history: list[dict]):
     messages = [
-        {
-            "role": "system",
-            "content": f"You are an assistant that answers questions based on website content. \n\nWebsite Content: {context}"
-        },
-        {
-            "role": "user",
-            "content": user_prompt,
-        }
-    ]
+                   {
+                       "role": "system",
+                       "content": f"You are an assistant that answers questions based on website content.\n\nWebsite Content:\n{context}"
+                   }
+               ] + history
 
     response = requests.post(
         url=url,
@@ -36,9 +31,6 @@ def parse_with_deepseek(context: list[str], user_prompt: str):
             "messages": messages,
         })
     )
-
-    print("Response status:", response.status_code)
-    print("Response text:", response.text)
 
     if response.status_code == 200:
         data = response.json()

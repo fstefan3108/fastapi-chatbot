@@ -18,7 +18,10 @@ def embed_website_chunks(db: db_dependency, user_id: int):
     ids = []
     id = 1
     websites = db.query(Website).filter(Website.owner_id==user_id).all()
+
     for website in websites:
+
+
         for chunk in website.chunks:
             chunks_list.append(chunk)
             ids.append(str(id))
@@ -28,10 +31,12 @@ def embed_website_chunks(db: db_dependency, user_id: int):
             })
             id += 1
 
+
     if chunks_list:
         collection.add(
             documents = chunks_list,
             metadatas = metadatas,
             ids = ids,
         )
+
 

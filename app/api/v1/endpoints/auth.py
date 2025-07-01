@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette import status
 from app.api.deps import db_dependency
@@ -7,6 +7,7 @@ from app.core.security import get_access_token
 from app.crud.crud_user import create_user, get_users
 from app.schemas.token import Token
 from app.schemas.user import UserRequest
+from app.utils.validation import check_user
 
 router = APIRouter()
 
@@ -29,8 +30,7 @@ async def create_user_endpoint(user: UserRequest, db: db_dependency):
 @router.get("/users/", status_code=status.HTTP_200_OK)
 async def get_users_endpoint(db: db_dependency):
     users = get_users(db=db)
-    if users is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users found.")
+    check_user(user=users, status_code=404, detail="Users not found.")
     return users
 
 

@@ -1,17 +1,23 @@
-from fastapi import APIRouter, Body
+import uuid
 
-from app.api.deps import user_dependency
-from app.core.security import check_user
-from app.services.parse.parse_content import parse_with_deepseek
-from app.vectorstore.get_embeddings import get_embeddings
+from fastapi import APIRouter
+from app.api.deps import user_dependency, db_dependency
+from app.schemas.chat import ChatRequest
+from app.services.handle_chat import handle_chat
+from app.utils.validation import check_user
 
 router = APIRouter()
 
-@router.post("/prompt/{website_id}", status_code=201)
-async def index(user: user_dependency, website_id: int, prompt: str = Body(...)):
-    check_user(user)
-
-    context = get_embeddings(user_id=user.get("id"), user_prompt=prompt, website_id=website_id)
-    deepseeks_response = parse_with_deepseek(context=context, user_prompt=prompt)
+@router.post("/chat", status_code=201)
+async def chatbot_message(user: user_dependency, db: db_dependency, chat: ChatRequest):
+    check_user(user=user, status_code=404, detail="User not found.")
+    deepseeks_response = handle_chat(db=db, chat=chat, user=user)
 
     return {"response": deepseeks_response}
+
+@router.post("/start_session", status_code=201)
+async def start_session(user: user_dependency):
+    check_user(user=user, status_code=404, detail="User not found.")
+    session_id = uuid.uuid4()
+
+    return {"session_id": session_id}
