@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 from app.core.config import settings
 from app.db.session import LocalSession
+from app.models.user import User
 
 
 ### Database session initialization ###
@@ -24,7 +25,7 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/v1/auth/token")
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
+def get_current_user(token: Annotated[str, Depends(oauth2_bearer)], db: db_dependency):
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=settings.algorithm)
         username: str = payload.get("sub")
@@ -33,10 +34,17 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
         if username is None or user_id is None:
             raise HTTPException(status_code=401, detail="Invalid Credentials")
 
+
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+
+
         return {"username": username, "id": user_id}
     except JWTError:
             raise HTTPException(status_code=401, detail="Invalid Credentials")
 
-
 # User dependency instantiation #
 user_dependency = Annotated[dict, Depends(get_current_user)]
+
+

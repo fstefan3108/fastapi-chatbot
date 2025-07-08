@@ -1,11 +1,9 @@
 from fastapi import HTTPException
-
-from app.api.deps import db_dependency, user_dependency
 from app.schemas.website import WebsiteRequest
 from app.services.scrape.scrape_website import scrape_website
 
 
-def handle_scraping_and_embedding(website: WebsiteRequest, db: db_dependency, user: user_dependency):
+def handle_scraping(website: WebsiteRequest):
     # scrape website #
     try:
         scraped_website = scrape_website(website.url)

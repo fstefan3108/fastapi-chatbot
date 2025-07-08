@@ -9,7 +9,6 @@ from passlib.context import CryptContext
 from app.api.deps import db_dependency
 from app.core.config import settings
 from app.models.user import User
-from app.utils.validation import check_user
 
 ### Checks if user exists in the DB by username, compares password with hashed password with bcrypt_content.verify() ###
 
@@ -42,7 +41,6 @@ def hash_password(password: str):
 
 def get_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):
     user = authenticate_user(form_data.username, form_data.password, db)
-    check_user(user=user, status_code=401, detail="Unauthorized")
 
     token = create_access_token(user.username, user.id, timedelta(minutes=settings.access_token_expire_minutes))
     return {"access_token": token, "token_type": "bearer"} # Note to self: access_token must be written exactly like that. #
