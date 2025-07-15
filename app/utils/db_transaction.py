@@ -1,28 +1,33 @@
 from functools import wraps
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException
+from app.core.logger import logger
 
-def db_transactional(func):
+
+def db_transactional_async(func):
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    async def wrapper(*args, **kwargs):
         db = kwargs.get("db")
 
-        # If not passed explicitly, try to get it from self.db (in methods)
         if not db and args:
             possible_self = args[0]
             if hasattr(possible_self, "db"):
                 db = getattr(possible_self, "db")
             else:
-                db = possible_self  # fallback if it's not a method
+                db = possible_self
 
         if db is None:
             raise ValueError("Database session not provided to transactional function.")
 
         try:
-            result = func(*args, **kwargs)
-            db.commit()
+            result = await func(*args, **kwargs)
+            await db.commit()
             return result
-        except SQLAlchemyError as e:
-            db.rollback()
+        except SQLAlchemyError:
+            await db.rollback()
+            logger.exception("Exception while executing transaction.")
             raise HTTPException(status_code=500, detail="Database transaction failed.")
     return wrapper
+
+
+

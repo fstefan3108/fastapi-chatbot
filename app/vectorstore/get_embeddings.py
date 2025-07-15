@@ -1,4 +1,5 @@
-from app.vectorstore.store_embeddings import client
+import asyncio
+from app.vectorstore.chroma_client import get_chroma_client
 
 # Gets passed the prompt, user's id and website's id when the endpoint is called #
 # Fetches the collection with the dynamicaly set name for each user #
@@ -6,15 +7,15 @@ from app.vectorstore.store_embeddings import client
 # which are stored in the collection after scraping the website. Returns the website content which #
 # best matches the prompt and gives it to deepseek. #
 
-def get_embeddings(user_id: int, user_prompt: str, website_id: int):
-    collection = client.get_collection(name=f"user_{user_id}_collection")
+async def get_embeddings(user_id: int, user_prompt: str, website_id: int) -> list[str]:
+    client = get_chroma_client()
+    collection = client.get_collection(name=f"user_{user_id}_website_{website_id}")
 
-    results = collection.query(
-        query_texts=user_prompt,
+    results = await asyncio.to_thread(
+        collection.query,
+        query_texts=[user_prompt],
         n_results=10,
-        where={"website_id": website_id},
-        include=["documents"]
+        include=["documents", "distances"]
     )
 
-
-    return results["documents"]
+    return results["documents"][0]

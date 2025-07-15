@@ -1,11 +1,10 @@
 from datetime import timedelta, datetime, timezone
 from typing import Annotated
-
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt
 from passlib.context import CryptContext
-
+from sqlalchemy import select
 from app.api.deps import db_dependency
 from app.core.config import settings
 from app.models.user import User
@@ -14,8 +13,12 @@ from app.models.user import User
 
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def authenticate_user(username: str, password: str, db: db_dependency):
-    user = db.query(User).filter(User.username == username).first()
+async def authenticate_user(username: str, password: str, db: db_dependency):
+
+    stmt = select(User).where(User.username == username)
+    result = await db.execute(stmt)
+    user = result.scalars().first()
+
     if not user:
         return False
     if not bcrypt_context.verify(password, user.hashed_password):
@@ -39,8 +42,11 @@ def hash_password(password: str):
     return bcrypt_context.hash(password)
 
 
-def get_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):
-    user = authenticate_user(form_data.username, form_data.password, db)
+async def get_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):
+    user = await authenticate_user(form_data.username, form_data.password, db)
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid Credentials")
 
     token = create_access_token(user.username, user.id, timedelta(minutes=settings.access_token_expire_minutes))
     return {"access_token": token, "token_type": "bearer"} # Note to self: access_token must be written exactly like that. #

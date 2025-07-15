@@ -1,31 +1,29 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 from app.core.config import settings
-from app.db.session import LocalSession
+from app.db.async_session import AsyncSessionLocal
 from app.models.user import User
 
 
-### Database session initialization ###
+# Async Session #
 
-def get_db():
-    db = LocalSession()
-    try:
+async def get_async_db():
+    async with AsyncSessionLocal() as db:
         yield db
-    finally:
-        db.close()
 
-# db_dependency instantiation #
-db_dependency = Annotated[Session, Depends(get_db)]
+db_dependency = Annotated[AsyncSession, Depends(get_async_db)]
+
 
 ### Gets the current logged user by decoding the JWT token; ###
 ### Extracts user's username and ID from the JWT package, using provided key and algorithm. ###
 
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/v1/auth/token")
 
-def get_current_user(token: Annotated[str, Depends(oauth2_bearer)], db: db_dependency):
+async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)], db: db_dependency):
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=settings.algorithm)
         username: str = payload.get("sub")
@@ -35,7 +33,10 @@ def get_current_user(token: Annotated[str, Depends(oauth2_bearer)], db: db_depen
             raise HTTPException(status_code=401, detail="Invalid Credentials")
 
 
-        user = db.query(User).filter(User.id == user_id).first()
+        stmt = select(User).where(User.id == user_id)
+        result = await db.execute(stmt)
+        user = result.scalars().first()
+
         if user is None:
             raise HTTPException(status_code=404, detail="User not found")
 
