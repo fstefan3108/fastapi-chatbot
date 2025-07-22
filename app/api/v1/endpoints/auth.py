@@ -7,7 +7,6 @@ from app.core.security import get_access_token
 from app.schemas.token import Token
 from app.schemas.user import UserRequest
 from app.services.user.service import UserService
-from app.utils.db_transaction import db_transactional_async
 
 router = APIRouter()
 
@@ -18,7 +17,6 @@ router = APIRouter()
 
 
 @router.post("/user", status_code=status.HTTP_201_CREATED)
-@db_transactional_async
 async def create_user(user: UserRequest, db: db_dependency):
     user_service = UserService(db=db)
     new_user = await user_service.create_user(user=user)
@@ -27,8 +25,7 @@ async def create_user(user: UserRequest, db: db_dependency):
 
 ### Authenticates the user and creates the JWT access token with user info (username and user_id) for said user. ###
 
-@router.post("/token", response_model=Token)
-@db_transactional_async
+@router.post("/token", status_code=status.HTTP_200_OK, response_model=Token)
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):
     return await get_access_token(form_data=form_data, db=db)
 

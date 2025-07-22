@@ -8,6 +8,7 @@ from sqlalchemy import select
 from app.api.deps import db_dependency
 from app.core.config import settings
 from app.models.user import User
+from app.utils.db_transaction import db_transactional_async
 
 ### Checks if user exists in the DB by username, compares password with hashed password with bcrypt_content.verify() ###
 
@@ -20,9 +21,9 @@ async def authenticate_user(username: str, password: str, db: db_dependency):
     user = result.scalars().first()
 
     if not user:
-        return False
+        return None
     if not bcrypt_context.verify(password, user.hashed_password):
-        return False
+        return None
     return user
 
 ### Creates a JWT for the user, sets expiration time for the token, ###
@@ -30,10 +31,10 @@ async def authenticate_user(username: str, password: str, db: db_dependency):
 ### and algorithm we provided. ###
 
 def create_access_token(username: str, user_id: int, expires_delta: timedelta):
-    encode = {"sub": username, "id": user_id}
+    payload = {"sub": username, "id": user_id}
     expires = datetime.now(timezone.utc) + expires_delta
-    encode.update({"exp": expires})
-    return jwt.encode(encode, settings.secret_key, algorithm=settings.algorithm)
+    payload.update({"exp": int(expires.timestamp())})
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 
 
 # hash password #
@@ -41,7 +42,7 @@ def create_access_token(username: str, user_id: int, expires_delta: timedelta):
 def hash_password(password: str):
     return bcrypt_context.hash(password)
 
-
+@db_transactional_async
 async def get_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):
     user = await authenticate_user(form_data.username, form_data.password, db)
 

@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.logger import logger
+from app.models import User
 from app.schemas.chat import ChatRequest
 from app.services.chat.service import ChatService
 from app.utils.format_chat import format_chat_history
@@ -18,10 +19,10 @@ class ChatBotSession:
     - store_message() -> Stores both the user's prompt and deepseek's reply in the database.
     """
 
-    def __init__(self, db: AsyncSession, user: dict, chat: ChatRequest):
+    def __init__(self, db: AsyncSession, user: User, chat: ChatRequest):
         self.db = db
         self.user = user
-        self.user_id = user["id"]
+        self.user_id =user.id
         self.chat = chat
         self.chat_service = ChatService(db=db)
 
@@ -36,20 +37,20 @@ class ChatBotSession:
 
         chat_history = await self.chat_service.get_chat_history(chat=self.chat)
 
-        # if there's no prior history: #
-        chat_history.append({
-            "role": "user",
-            "content": self.chat.message
-        })
+        # if no prior history #
+        if not chat_history:
+            chat_history = [{
+                "role": "user",
+                "content": self.chat.message
+            }]
 
         formatted_history = format_chat_history(chat_history)
-        logger.info("[SUCCESS] Created Chat History")
-        print(formatted_history)
+        logger.info(f"[SUCCESS] Created Chat History {formatted_history}")
         return context, formatted_history
 
 
     @db_transactional_async
-    async def generate_and_store_reply(self):
+    async def generate_and_store_reply(self) -> str:
         context, formatted_history = await self.generate_context()
 
         deepseek_reply = await parse_with_deepseek(context=context, history=formatted_history)
@@ -59,7 +60,7 @@ class ChatBotSession:
         logger.info(f"[SUCCESS] Created new user prompt")
 
         await self.chat_service.create_deepseek_reply(chat=self.chat, user=self.user, reply=deepseek_reply)
-        logger.info("[SUCCESS] Deeepseek's reply stored in database")
+        logger.info("[SUCCESS] Deepseek's reply stored in database")
 
         return deepseek_reply
 

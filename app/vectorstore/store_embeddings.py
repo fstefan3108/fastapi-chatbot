@@ -1,22 +1,19 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.crud_website import crud_website
 from app.models.website import Website
+from app.utils.split_chunks import split_to_chunks
 from app.vectorstore.chroma_client import get_chroma_client, get_sentence_transformer
-from app.core.logger import logger
-from app.vectorstore.text_cleaner import TextCleaner
-
 
 # initializes the persistent client which will keep data in the data directory after the functions runs; #
 # sets the model for the embedding to all-mpnet-base-v2 (free model) #
 # creates a new collection with embeddings that later gets stored in the persistent client. #
 
-def store_embedding_data(db: Session, user_id: int):
-    cleaner = TextCleaner()
+async def store_embedding_data(db: AsyncSession, user_id: int):
     client = get_chroma_client()
     sentence_transformer_ef = get_sentence_transformer()
 
     criteria = Website.owner_id == user_id
-    websites = crud_website.get_by_sync(db=db, criteria=criteria)
+    websites = await crud_website.get_by(db=db, criteria=criteria)
 
     for website in websites:
 
@@ -28,20 +25,18 @@ def store_embedding_data(db: Session, user_id: int):
         ids = []
         id = 1
 
-        logger.info(type(website.chunks))
-        for chunk in website.chunks:
+        for markdown in website.markdown:
+            chunks = split_to_chunks(markdown)
 
-            logger.info(f"Uncleaned chunk:{chunk}")
-            cleaned_chunk = cleaner.clean(chunk)
-            logger.info(f"Cleaned chunk:{cleaned_chunk}")
+            for chunk in chunks:
 
-            chunks_list.append(cleaned_chunk)
-            ids.append(str(id))
-            metadatas.append({
-                "owner_id": user_id,
-                "website_id": website.id,
-            })
-            id += 1
+                chunks_list.append(chunk)
+                ids.append(str(id))
+                metadatas.append({
+                    "owner_id": user_id,
+                    "website_id": website.id,
+                })
+                id += 1
 
         if chunks_list:
             collection.add(

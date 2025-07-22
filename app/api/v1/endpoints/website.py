@@ -1,11 +1,9 @@
-import json
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from starlette import status
-from app.schemas.website import WebsiteRequest
+from app.schemas.website import WebsiteCreate, WebsiteRequest
+from app.services.website.scrape_and_save_website import scrape_and_store_website
 from app.services.website.service import WebsiteService
-from tasks.website import scrape_add_website_task
-from ...deps import db_dependency, user_dependency
-from tasks.redis_client import r
+from app.api.deps import db_dependency, user_dependency
 
 ### Router Declaration ###
 router = APIRouter()
@@ -18,24 +16,15 @@ router = APIRouter()
 
 
 @router.post("/website", status_code=status.HTTP_202_ACCEPTED)
-async def create_website(website: WebsiteRequest, user: user_dependency):
-    task = scrape_add_website_task.delay(website.url, user.get("id"))
-    return { "message": "Website creation started", "task_id": task.id }
+async def create_website(website: WebsiteRequest, user: user_dependency, db: db_dependency):
+    await scrape_and_store_website(url=website.url, user=user, db=db)
+    return {"message": "Website created successfully"}
 
 
 ### Fetches all websites for the authenticated user from the db. ###
 
 @router.get("/websites", status_code=status.HTTP_200_OK)
-async def get_websites(db: db_dependency, user: user_dependency):
+async def get_websites(user: user_dependency, db: db_dependency):
     website_service = WebsiteService(db=db, user=user)
     websites = await website_service.get_websites()
     return websites
-
-
-
-@router.get("/task-status/{task_id}", status_code=200)
-async def get_task_status(task_id: str):
-    data = r.get(task_id)
-    if not data:
-        raise HTTPException(status_code=404, detail="Task ID not found or expired.")
-    return json.loads(data)

@@ -41,11 +41,11 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)], db: db
             raise HTTPException(status_code=404, detail="User not found")
 
 
-        return {"username": username, "id": user_id}
+        return user
     except JWTError:
             raise HTTPException(status_code=401, detail="Invalid Credentials")
 
 # User dependency instantiation #
-user_dependency = Annotated[dict, Depends(get_current_user)]
+user_dependency = Annotated[User, Depends(get_current_user)]
 
 

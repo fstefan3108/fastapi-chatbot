@@ -1,7 +1,7 @@
-from sqlalchemy import Integer, ForeignKey, Text
+from sqlalchemy import Integer, ForeignKey, Text, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped
-from sqlalchemy.testing.schema import mapped_column
+from sqlalchemy.orm import mapped_column
 from app.db.base import Base
 
 # Website DB Model #
@@ -9,9 +9,9 @@ from app.db.base import Base
 class Website(Base):
     __tablename__ = 'websites'
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    title: Mapped[str] = mapped_column(Text, nullable=False)
-    url: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
-    chunks: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    url: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    markdown: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
 
     def __repr__(self) -> str:

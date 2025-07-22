@@ -1,7 +1,9 @@
+from typing import Optional, Generic, TypeVar, Type
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
+ModelType = TypeVar("ModelType")
 
 ### Self note: Key differences between previous sync version and new async version: ###
 ### In the sync version, data from the tables is already available for use/querying/filtering ###
@@ -9,25 +11,25 @@ from sqlalchemy.orm import Session
 ### And unpack the results with .scalars() for later use. (stmt = statement) ###
 
 
-class CRUDBase:
-    def __init__(self, model):
+class CRUDBase(Generic[ModelType]):
+    def __init__(self, model: Type[ModelType]):
         self.model = model
 
-    async def create(self, db: AsyncSession, data: dict):
+    async def create(self, db: AsyncSession, data: dict) -> ModelType:
         item = self.model(**data)
         db.add(item)
         await db.flush()
         await db.refresh(item)
         return item
 
-    def create_sync(self, db: Session, data: dict):
+    def create_sync(self, db: Session, data: dict) -> ModelType:
         item = self.model(**data)
         db.add(item)
         db.flush()
         db.refresh(item)
         return item
 
-    async def get_by(self, db: AsyncSession, criteria=None, order=None):
+    async def get_by(self, db: AsyncSession, criteria: Optional = None, order: Optional = None) -> list[ModelType]:
 
         stmt = select(self.model)
         if criteria is not None:
@@ -36,9 +38,9 @@ class CRUDBase:
             stmt = stmt.order_by(order)
 
         result = await db.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
-    def get_by_sync(self, db: Session, criteria=None, order=None):
+    def get_by_sync(self, db: Session, criteria: Optional = None, order: Optional = None) -> list[ModelType]:
 
         query = db.query(self.model)
         if criteria is not None:
@@ -47,7 +49,7 @@ class CRUDBase:
             query = query.order_by(order)
         return query.all()
 
-    async def get_first(self, db: AsyncSession, criteria=None):
+    async def get_first(self, db: AsyncSession, criteria: Optional = None) -> Optional[ModelType]:
 
         stmt = select(self.model)
         if criteria is not None:

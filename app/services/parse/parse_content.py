@@ -10,11 +10,10 @@ url = settings.api_url
 # User content is the users prompt #
 # Deepseek replies #
 
-MAX_CONVOS = 3
-
 async def parse_with_deepseek(context: list[str], history: list[dict]) -> str:
-    history = history[-MAX_CONVOS*2:]
-    full_context = "\n\n".join(context)
+    # adds only last three conversations #
+    flat_context = [item for sublist in context for item in sublist]
+    full_context = "\n\n".join(flat_context)
     messages = [
                    {
                        "role": "system",
@@ -23,7 +22,6 @@ async def parse_with_deepseek(context: list[str], history: list[dict]) -> str:
 
                         Your job is to help users understand what's available on the website, such as products, services, pricing, or company information.
 
-                        Keep your responses clear, factual, and brief — ideally 2 to 4 sentences.
                         Do not explain your reasoning or show your thought process.
                         Do not include summaries or general information not found in the website content.
 
@@ -51,13 +49,14 @@ async def parse_with_deepseek(context: list[str], history: list[dict]) -> str:
     except httpx.RequestError as e:
         return f"Request failed: {e}"
 
-
     if response.status_code == 200:
-        data = response.json()
-
-        if "choices" in data:
-            return data["choices"][0]["message"]["content"]
-        else:
-            return f"No choices returned.\nFull response:\n{data}"
+        try:
+            data = response.json()
+            if "choices" in data:
+                return data["choices"][0]["message"]["content"]
+            else:
+                return f"No choices returned.\nFull response:\n{data}"
+        except Exception as e:
+            return f"Failed to parse response JSON: {e}"
     else:
         return f"Error: {response.status_code}\n{response.text}"
