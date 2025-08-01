@@ -1,18 +1,20 @@
 import asyncio
 from pydantic import HttpUrl
 from app.api.deps import db_dependency, user_dependency
+from app.services.embedding.service import EmbeddingService
 from app.services.website.service import WebsiteService
 from app.services.crawler.crawler_service import run_crawler_service
 from app.core.logger import logger
 from app.utils.deduplication import deduplicate_markdown_lines
 from app.utils.split_chunks import split_to_chunks
 from app.utils.validation import check_website
-from app.vectorstore.embed_chunk import embed_chunk
 
 
 async def scrape_and_store_website(url: HttpUrl, user: user_dependency, db: db_dependency):
     try:
         website_service = WebsiteService(db=db, user=user)
+        embedding_service = EmbeddingService(website_url=str(url), db=db)
+
         await check_website(url=str(url), db=db)
         logger.info(f"Scraping website: {url}")
         title, markdown_list = await run_crawler_service(url=url)
@@ -35,7 +37,7 @@ async def scrape_and_store_website(url: HttpUrl, user: user_dependency, db: db_d
         logger.info("Done!")
 
         logger.info("Storing embeddings...")
-        await embed_chunk(chunks=unique_chunks, website=website, db=db)
+        await embedding_service.create_embeddings(chunks=unique_chunks)
         logger.info("Done!")
 
     except Exception as e:
