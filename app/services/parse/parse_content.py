@@ -10,29 +10,35 @@ url = settings.api_url
 # User content is the users prompt #
 # Deepseek replies #
 
-async def parse_with_deepseek(context: list[str], history: list[dict]) -> str:
+async def parse_with_deepseek(context: str, history: list[dict], current_prompt: str) -> str:
     # adds only last three conversations #
-    flat_context = [item for sublist in context for item in sublist]
-    full_context = "\n\n".join(flat_context)
     messages = [
                    {
                        "role": "system",
                        "content": f"""
-                        You are a helpful AI assistant that answers questions based only on the provided website content.
+You are a helpful AI assistant that answers questions based only on the provided website content.
 
-                        Your job is to help users understand what's available on the website, such as products, services, pricing, or company information.
+Your job is to help users understand what's available on the website, such as products, services, pricing, or company information.
 
-                        Do not explain your reasoning or show your thought process.
-                        Do not include summaries or general information not found in the website content.
+IMPORTANT RULES:
+- Do NOT include any internal thoughts or monologues.
+- NEVER use <think> tags or describe your reasoning.
+- Only give direct, concise answers based on the provided content.
+- If the answer is not found, say: "That information is not available on the website."
 
-                        Website Content:
-                        {full_context}
-                        """
-                  }
-    ] + history
+Website Content:
+{context}
+"""
+        },
+        *history,
+        {
+            "role": "user",
+            "content": current_prompt
+        }
+    ]
 
     payload = {
-        "model": "deepseek/deepseek-r1-0528:free",
+        "model": "deepseek/deepseek-chat-v3-0324:free",
         "messages": messages,
     }
 

@@ -1,9 +1,17 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, HttpUrl
 
 class WebsiteRequest(BaseModel):
-    url: str = Field(min_length=1)
+    url: HttpUrl
+
+class WebsiteResponse(BaseModel):
+    id: int
+    url: HttpUrl
+    title: str
+    api_key: str
+
+    class Config:
+        from_attributes = True
 
 class WebsiteCreate(WebsiteRequest):
     title: str
-    markdown: list[str]
     owner_id: int

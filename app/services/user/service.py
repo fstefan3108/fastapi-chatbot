@@ -13,14 +13,14 @@ class UserService:
 
     @db_transactional_async
     async def create_user(self, user: UserRequest) -> User:
-        hashed_password = hash_password(user.password)
+        hashed_password = await hash_password(user.password)
         await check_username(user=user, db=self.db)
 
         user_create = UserCreate(
-            username=user.username,
-            email=user.email,
+            **user.model_dump(),
             hashed_password=hashed_password,
         )
 
         new_user = await crud_user.create(db=self.db, data=user_create.model_dump())
+        await self.db.refresh(new_user)
         return new_user

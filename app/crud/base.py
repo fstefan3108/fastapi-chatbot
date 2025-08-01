@@ -1,7 +1,6 @@
 from typing import Optional, Generic, TypeVar, Type
-from sqlalchemy import select
+from sqlalchemy import select, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 
 ModelType = TypeVar("ModelType")
 
@@ -22,38 +21,39 @@ class CRUDBase(Generic[ModelType]):
         await db.refresh(item)
         return item
 
-    def create_sync(self, db: Session, data: dict) -> ModelType:
-        item = self.model(**data)
-        db.add(item)
-        db.flush()
-        db.refresh(item)
-        return item
-
-    async def get_by(self, db: AsyncSession, criteria: Optional = None, order: Optional = None) -> list[ModelType]:
-
+    async def get_all(self, db: AsyncSession, limit: Optional[int] = None, criteria: Optional = None, order: Optional = None) -> list[ModelType]:
         stmt = select(self.model)
         if criteria is not None:
             stmt = stmt.where(criteria)
         if order is not None:
             stmt = stmt.order_by(order)
+        if limit is not None:
+            stmt = stmt.limit(limit)
 
         result = await db.execute(stmt)
         return list(result.scalars().all())
 
-    def get_by_sync(self, db: Session, criteria: Optional = None, order: Optional = None) -> list[ModelType]:
-
-        query = db.query(self.model)
-        if criteria is not None:
-            query = query.filter(criteria)
-        if order is not None:
-            query = query.order_by(order)
-        return query.all()
-
-    async def get_first(self, db: AsyncSession, criteria: Optional = None) -> Optional[ModelType]:
-
+    async def get_single(self, db: AsyncSession, criteria: Optional = None) -> Optional[ModelType]:
         stmt = select(self.model)
         if criteria is not None:
             stmt = stmt.where(criteria)
 
         result = await db.execute(stmt)
         return result.scalars().first()
+
+    async def delete(self, db: AsyncSession, criteria: Optional = None) -> None:
+        stmt = delete(self.model)
+        if criteria is not None:
+            stmt = stmt.where(criteria)
+
+        await db.execute(stmt)
+
+    async def update(self, db: AsyncSession, values: dict, criteria: Optional = None) -> Optional[ModelType]:
+        stmt = update(self.model).values(**values)
+        if criteria is not None:
+            stmt = stmt.where(criteria)
+
+        result = await db.execute(stmt)
+        return result.scalars().first()
+
+

@@ -1,6 +1,7 @@
-import requests
+import httpx
 from xml.etree import ElementTree
 from urllib.parse import urljoin, urlparse
+
 from app.core.logger import logger
 
 
@@ -11,7 +12,7 @@ class SitemapExtractor:
     def __init__(self):
         self.timeout = 10
 
-    def get_urls_from_sitemap(self, base_url: str) -> list[str]:
+    async def get_urls_from_sitemap(self, base_url: str) -> list[str]:
         """
         Extracts URLs from sitemap
         base_url -> the base url of the website (e.g. http://example.com)
@@ -20,28 +21,31 @@ class SitemapExtractor:
         sitemap_paths = ['/sitemap.xml', '/sitemap_index.xml', '/sitemap.xml.gz']
 
         for sitemap_path in sitemap_paths:
-            sitemap_url = urljoin(base_url, sitemap_path) # Joins base url with sitemap paths #
-            if urls := self._fetch_sitemap_urls(sitemap_url):
+            sitemap_url = urljoin(str(base_url), sitemap_path) # Joins base url with sitemap paths #
+            if urls := await self._fetch_sitemap_urls(sitemap_url):
 
                 logger.info(f"Found {len(urls)} URLs in sitemap: {sitemap_url}")
-                return self.filter_urls_by_domain(urls, base_url)
+                return self.filter_urls_by_domain(urls, base_url) # No need to push to thread - lightweight #
 
         logger.info(f"No sitemap found for: {base_url}")
         return []
 
-    def _fetch_sitemap_urls(self, sitemap_url: str) -> list[str]:
+    async def _fetch_sitemap_urls(self, sitemap_url: str) -> list[str]:
         """
         Fetch URLs from the provided sitemap url
         sitemap_url -> the url of the sitemap passed by the main get_urls_from_sitemap method
         returns a list of URLs found in the sitemap
         """
         try:
-            response = requests.get(sitemap_url, timeout=self.timeout)
-            response.raise_for_status()
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.get(sitemap_url)
+                response.raise_for_status()
+                content = response.content
 
-            root = ElementTree.fromstring(response.content) # Parses the xml #
+            root = ElementTree.fromstring(content)  # Parses the xml #
             namespace = {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
-            urls = [loc.text for loc in root.findall('.//ns:loc', namespace)] # Extracts the actual urls inside <loc> xml tags #
+            urls = [loc.text for loc in
+                    root.findall('.//ns:loc', namespace)]  # Extracts the actual urls inside <loc> xml tags #
 
             return urls
 
@@ -59,7 +63,7 @@ class SitemapExtractor:
         base_url -> base url of the site, used to compare domains against
         returns filtered urls
         """
-        base_domain = urlparse(base_url).netloc # from https://www.invt.tech/ to -> www.invt.tech #
+        base_domain = urlparse(str(base_url)).netloc # from https://www.invt.tech/ to -> www.invt.tech #
 
         filtered_urls = [
             url for url in urls

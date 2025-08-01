@@ -93,17 +93,17 @@ class WebCrawler:
         """
         try:
             logger.info("=== Begin parallel sitemap crawling ===")
-            base_url = url.rstrip("/")
+            base_url = str(url).rstrip("/")
             website_title = "Untitled"
             markdowns = []
 
-            urls = self.sitemap_extractor.get_urls_from_sitemap(url)
+            urls = await self.sitemap_extractor.get_urls_from_sitemap(str(url))
 
             if not urls:
                 logger.info(f"No urls found for url: {url}")
                 return website_title, markdowns
 
-            logger.info(f"Found {len(urls)} urls for crawling from {url}")
+            logger.info(f"Found {len(str(urls))} urls for crawling from {url}")
 
             async with AsyncWebCrawler(config=self.browser_config) as crawler:
                 results = await crawler.arun_many(
@@ -137,7 +137,7 @@ class WebCrawler:
 
 
     async def crawl_multipage(self, start_url: str, max_depth: int = 2):
-        base_url = start_url.rstrip("/")
+        base_url = str(start_url).rstrip("/")
         website_title = "Untitled"
         markdowns = []
 
@@ -145,7 +145,7 @@ class WebCrawler:
         visited = set()
 
         # Start with the initial URL #
-        current_urls = {normalize_url(start_url)}
+        current_urls = {normalize_url(str(start_url))}
 
         try:
             async with AsyncWebCrawler(config=self.browser_config) as crawler:
@@ -154,7 +154,6 @@ class WebCrawler:
 
                     # Only crawl URLs we haven't seen yet (ignoring fragments) #
                     urls_to_crawl = [url for url in current_urls if url not in visited]
-
                     if not urls_to_crawl:
                         logger.info(f"No new URLs to crawl at depth {depth + 1}")
                         break

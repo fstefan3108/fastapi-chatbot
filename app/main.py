@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.api.v1.api import v1_router
-from app.vectorstore.chroma_client import get_sentence_transformer
+from app.vectorstore.sentence_transformer import get_sentence_transformer
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

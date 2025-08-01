@@ -1,8 +1,10 @@
+from pydantic import HttpUrl
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.crud_website import crud_website
 from app.models import User
 from app.models.website import Website
-from app.schemas.website import WebsiteCreate
+from app.schemas.website import WebsiteCreate, WebsiteRequest
+from app.utils.db_transaction import db_transactional_async
 
 
 class WebsiteService:
@@ -11,22 +13,31 @@ class WebsiteService:
         self.user = user
 
     async def get_websites(self) -> list[Website]:
-        criteria = Website.owner_id == self.user.id
-        websites = await crud_website.get_by(db=self.db, criteria=criteria)
+        websites = await crud_website.get_all(db=self.db, criteria=Website.owner_id == self.user.id)
         return websites
 
-    async def create_website(self, title: str, url: str, markdown: list[str]) -> Website:
+    @db_transactional_async
+    async def create_website(self, title: str, url: HttpUrl) -> Website:
         website_create = WebsiteCreate(
+            **WebsiteRequest(url=url).model_dump(),
             title=title,
-            url=url,
-            markdown=markdown,
             owner_id=self.user.id
         )
 
-        new_website = await crud_website.create(db=self.db, data=website_create.model_dump())
+        data_dict = website_create.model_dump()
+        data_dict["url"] = str(data_dict["url"])
+
+        new_website = await crud_website.create(db=self.db, data=data_dict)
         return new_website
 
     async def get_website_by_id(self, id: int) -> Website:
-        criteria = Website.id == id
-        website = await crud_website.get_by(db=self.db, criteria=criteria)
+        website = await crud_website.get_single(db=self.db, criteria=Website.id == id)
         return website
+
+    @db_transactional_async
+    async def delete_website_by_id(self, id: int) -> None:
+        await crud_website.delete(db=self.db, criteria=(Website.id == id) & (Website.owner_id == self.user.id))
+
+    @db_transactional_async
+    async def delete_all_websites(self) -> None:
+        await crud_website.delete(db=self.db, criteria=(Website.owner_id == self.user.id))
