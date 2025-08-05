@@ -5,6 +5,7 @@ from app.models import Chat, Website
 from app.schemas.chat import ChatRequest
 from app.services.chat.service import ChatService
 from app.services.embedding.service import EmbeddingService
+from app.services.overseer.overseer import Overseer
 from app.utils.format_chat import format_chat_history
 from app.services.parse.parse_content import parse_with_deepseek
 
@@ -25,18 +26,20 @@ class ChatBotSession:
         self.chat = chat
         self.chat_service = ChatService(db=db, website=website)
         self.embedding_service = EmbeddingService(db=db, website_url=website.url)
+        self.overseer_service = Overseer(db=db, website=website)
 
     async def generate_context(self) -> tuple[str, Any]:
 
         try:
-            context = await self.embedding_service.hybrid_search(user_prompt=self.chat.message)
-            logger.info(f"[SUCCESS] Hybrid search performed successfully. CONTEXT: {context}")
-
             chat_history = await self.chat_service.get_chat_history(chat=self.chat)
             logger.info("[SUCCESS] Created chat history")
 
-            formatted_history = format_chat_history(chat_history) # No need to push to a thread - lightweight task #
+            formatted_history = format_chat_history(chat_history)  # No need to push to a thread - lightweight task #
             logger.info(f"CHAT HISTORY: {formatted_history}")
+
+            context = await self.overseer_service.prepare_context(user_prompt=self.chat.message, history=formatted_history)
+            logger.info(f"[SUCCESS] Hybrid search performed successfully. CONTEXT: {context}")
+
             return context, formatted_history
 
         except Exception as e:
@@ -47,7 +50,7 @@ class ChatBotSession:
         try:
             full_context, formatted_history = await self.generate_context()
 
-            deepseek_reply = await parse_with_deepseek(context=full_context, history=formatted_history, current_prompt=self.chat.message)
+            deepseek_reply = await parse_with_deepseek(context=full_context, current_prompt=self.chat.message, history=formatted_history)
             logger.info("[SUCCESS] Deepseek generated a reply")
 
             user_message = await self.chat_service.create_user_prompt(chat=self.chat)

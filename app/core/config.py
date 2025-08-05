@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     database_url_async: str
     database_url_sync: str
     access_token_expire_minutes: int = 30
-    api_key: str
+    openrouter_api_key: str
     api_url: str
     redis_url: str
 

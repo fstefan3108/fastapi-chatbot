@@ -1,7 +1,7 @@
 from app.core.config import settings
 import httpx
 
-key = settings.api_key
+key = settings.openrouter_api_key
 url = settings.api_url
 
 
