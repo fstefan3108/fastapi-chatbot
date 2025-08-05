@@ -9,7 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from pgvector import Vector
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import JSON
 from sqlalchemy.dialects.postgresql import TSVECTOR
 
@@ -30,7 +30,7 @@ def downgrade() -> None:
         'embeddings',
         sa.Column('id', sa.Integer, primary_key=True, index=True),
         sa.Column('chunk', sa.Text, nullable=False),
-        sa.Column('embedding', Vector(384), nullable=False),
+        sa.Column('embedding', Vector(dim=384), nullable=False),
         sa.Column('chunk_metadata', JSON, nullable=False, server_default=sa.text("'{}'::json")),
         sa.Column('website_id', sa.Integer, sa.ForeignKey('websites.id'), nullable=False, index=True),
         sa.Column('fts_vector', TSVECTOR)

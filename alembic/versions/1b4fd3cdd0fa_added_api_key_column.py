@@ -26,5 +26,5 @@ def upgrade() -> None:
     op.create_index("websites_api_key", "websites", ["api_key"], unique=True)
 
 def downgrade() -> None:
-    op.drop_index("ix_websites_api_key", table_name="websites")
+    op.drop_index("websites_api_key", table_name="websites")
     op.drop_column("websites", "api_key")

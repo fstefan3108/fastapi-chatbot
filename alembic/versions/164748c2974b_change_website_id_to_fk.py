@@ -20,15 +20,15 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.drop_column("chat_histories", "user_id")
+    op.add_column("chat_histories", sa.Column("website_id", sa.Integer(), nullable=False))
     op.create_foreign_key("fk_chat_histories_website_id", "chat_histories", "websites", ['website_id'], ['id'])
     op.create_index('chat_histories_website_id', 'chat_histories', ['website_id'])
-    pass
+
 
 
 def downgrade():
-    # Reverse operations
-    op.drop_index('ix_chat_histories_website_id', table_name='chat_histories')
+    op.drop_index('chat_histories_website_id', table_name='chat_histories')
     op.drop_constraint('fk_chat_histories_website_id', 'chat_histories', type_='foreignkey')
     op.drop_column('chat_histories', 'website_id')
     op.add_column('chat_histories', sa.Column('user_id', sa.Integer(), nullable=True))
-    pass
+
