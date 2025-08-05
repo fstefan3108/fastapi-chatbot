@@ -4,7 +4,6 @@ import httpx
 key = settings.api_key
 url = settings.api_url
 
-
 # Takes in context and user_prompt sent from the chatbot endpoint #
 # Website content fetched by embedding is provided as context for the instructions #
 # User content is the users prompt #

@@ -1,4 +1,3 @@
-import asyncio
 from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.logger import logger
@@ -8,7 +7,6 @@ from app.services.chat.service import ChatService
 from app.services.embedding.service import EmbeddingService
 from app.utils.format_chat import format_chat_history
 from app.services.parse.parse_content import parse_with_deepseek
-from app.utils.rrc import reciprocal_rank_fusion
 
 
 class ChatBotSession:
@@ -31,24 +29,15 @@ class ChatBotSession:
     async def generate_context(self) -> tuple[str, Any]:
 
         try:
-            semantic_results = await self.embedding_service.get_embeddings(self.chat.message)
-            logger.info(f"[SUCCESS] Fetched embeddings / Stored Context \n Context: {semantic_results}")
-            keyword_results = await self.embedding_service.keyword_search(self.chat.message)
-            logger.info(f"[SUCCESS] Fetched Keywords: {keyword_results}")
-
-            semantic_chunks = [embedding.chunk for embedding in semantic_results]
-            keyword_chunks = [embedding.chunk for embedding in keyword_results]
-
-            full_context = asyncio.to_thread(reciprocal_rank_fusion, semantic_chunks, keyword_chunks)
-            logger.info(f"FULL CONTEXT: {full_context}")
-            full_context_string = "\n\n".join(full_context)
+            context = await self.embedding_service.hybrid_search(self.chat.message)
+            logger.info(f"FULL CONTEXT: {context}")
 
             chat_history = await self.chat_service.get_chat_history(chat=self.chat)
             logger.info("[SUCCESS] Created chat history")
 
-            formatted_history = format_chat_history(chat_history) # No need to push to a thread - lightweight task #
+            formatted_history = format_chat_history(chat_history)
             logger.info(f"CHAT HISTORY: {formatted_history}")
-            return full_context_string, formatted_history
+            return context, formatted_history
 
         except Exception as e:
             logger.error(f"[ERROR] {e}")
