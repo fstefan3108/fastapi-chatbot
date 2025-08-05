@@ -1,7 +1,7 @@
 from app.core.config import settings
 import httpx
 
-key = settings.api_key
+key = settings.openrouter_api_key
 url = settings.api_url
 
 # Takes in context and user_prompt sent from the chatbot endpoint #

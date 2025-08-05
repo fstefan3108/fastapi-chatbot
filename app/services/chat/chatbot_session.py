@@ -3,10 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.logger import logger
 from app.models import Chat, Website
 from app.schemas.chat import ChatRequest
+from app.services.agents.overseer import Overseer
 from app.services.chat.service import ChatService
 from app.services.embedding.service import EmbeddingService
 from app.utils.format_chat import format_chat_history
-from app.services.parse.parse_content import parse_with_deepseek
+from app.services.agents.deepseek_chatbot import parse_with_deepseek
 
 
 class ChatBotSession:
@@ -29,14 +30,19 @@ class ChatBotSession:
     async def generate_context(self) -> tuple[str, Any]:
 
         try:
-            context = await self.embedding_service.hybrid_search(self.chat.message)
-            logger.info(f"FULL CONTEXT: {context}")
-
             chat_history = await self.chat_service.get_chat_history(chat=self.chat)
             logger.info("[SUCCESS] Created chat history")
 
             formatted_history = format_chat_history(chat_history)
             logger.info(f"CHAT HISTORY: {formatted_history}")
+
+            overseer = Overseer(history=formatted_history, user_prompt=self.chat.message)
+            search_plan = await overseer.run_agent()
+            logger.info(f"[SUCCESS] Overseer generated a search plan: {search_plan}")
+
+            context = await self.embedding_service.hybrid_search(search_plan=search_plan)
+            logger.info(f"Final context: {context}")
+
             return context, formatted_history
 
         except Exception as e:
