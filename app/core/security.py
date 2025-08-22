@@ -19,7 +19,7 @@ async def authenticate_user(username: str, password: str, db: db_dependency):
 
     if not user:
         return None
-    if not bcrypt_context.verify(password, user.hashed_password):
+    if not asyncio.to_thread(bcrypt_context.verify, password, user.hashed_password):
         return None
     return user
 

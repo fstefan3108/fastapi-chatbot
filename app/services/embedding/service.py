@@ -80,4 +80,5 @@ class EmbeddingService:
             return ' & '.join(tokens)
 
         # Join sanitized groups with OR (|)
+
         return ' | '.join(sanitize_group(group) for group in keyword_groups)

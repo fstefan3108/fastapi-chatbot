@@ -10,7 +10,6 @@ from app.db.async_session import AsyncSessionLocal
 from app.models import Website
 from app.models.user import User
 
-
 # Async Session #
 
 async def get_async_db():

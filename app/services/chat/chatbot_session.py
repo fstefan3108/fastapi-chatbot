@@ -3,11 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.logger import logger
 from app.models import Chat, Website
 from app.schemas.chat import ChatRequest
+from app.services.agents.chatbot import DeepseekChatbot
 from app.services.agents.overseer import Overseer
 from app.services.chat.service import ChatService
 from app.services.embedding.service import EmbeddingService
 from app.utils.format_chat import format_chat_history
-from app.services.agents.deepseek_chatbot import parse_with_deepseek
 
 
 class ChatBotSession:
@@ -53,13 +53,14 @@ class ChatBotSession:
         try:
             full_context, formatted_history = await self.generate_context()
 
-            deepseek_reply = await parse_with_deepseek(context=full_context, history=formatted_history, current_prompt=self.chat.message)
+            deepseek_chatbot = DeepseekChatbot(context=full_context, history=formatted_history, current_prompt=self.chat.message)
+            deepseek_reply = await deepseek_chatbot.run_agent()
             logger.info("[SUCCESS] Deepseek generated a reply")
 
             user_message = await self.chat_service.create_user_prompt(chat=self.chat)
             logger.info(f"[SUCCESS] Created new user prompt")
 
-            assistant_reply = await self.chat_service.create_deepseek_reply(chat=self.chat, reply=deepseek_reply)
+            assistant_reply = await self.chat_service.create_deepseek_reply(chat=self.chat, reply=deepseek_reply.response)
             logger.info("[SUCCESS] Deepseek's reply stored in database")
 
             return user_message, assistant_reply

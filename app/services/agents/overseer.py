@@ -3,11 +3,19 @@ from pydantic_ai.models.openai import OpenAIModel
 from app.schemas.overseer import SearchPlan
 
 class Overseer:
+    """
+    The overseer agent responsbile for formatting RAG search queries for the semantic and full text search,
+    and deciding whether or not a text to sql query search would be more aplicable.
+    - history -> full conversation for this/that session.
+    - user_prompt -> the user's question, which is then formatted by the overseer.
+    - model -> defines the model the Agent() will use.
+    - instructions -> creates the specific task instructions.
+    """
     def __init__(self, history: list[dict], user_prompt: str):
         self.history = history
         self.user_prompt = user_prompt
         self.model = OpenAIModel(
-            "deepseek/deepseek-chat-v3-0324:free",
+            "openrouter/horizon-beta",
             provider="openrouter"
         )
 
@@ -36,8 +44,12 @@ class RagQueries(BaseModel):
         )
 
     async def run_agent(self) -> SearchPlan:
-        result = await self.overseer_llm.run()
-        return result.output
+        try:
+            result = await self.overseer_llm.run()
+            return result.output
+        except Exception as e:
+            print(f"Error running overseer: {e}")
+            raise e
 
     def _get_instructions(self) -> str:
         return f"""
