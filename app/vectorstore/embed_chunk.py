@@ -4,7 +4,6 @@ from app.models import Website
 from app.services.embedding.service import EmbeddingService
 from app.vectorstore.generate_embedding_vector import create_embedding_vector
 
-
 async def embed_chunk(chunks: list[str], website: Website, db: AsyncSession):
     embedding_service = EmbeddingService(db=db, website_id=website.id)
     for index,chunk in enumerate(chunks):

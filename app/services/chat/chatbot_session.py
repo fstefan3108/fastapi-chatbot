@@ -1,17 +1,11 @@
-from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.logger import logger
-from app.models import Chat, Website
+from app.models import Website
 from app.schemas.chat import ChatRequest
-from app.services.agents.chatbot import DeepseekChatbot
-from app.services.agents.overseer import Overseer
 from app.services.chat.service import ChatService
-from app.services.embedding.service import EmbeddingService
-from app.utils.format_chat import format_chat_history
-
+from app.services.rag_agent.workflow import Workflow
 
 class ChatBotSession:
-
     """
     - Class for creating the ChatBot session workflow
     - generate_context() -> creates the context for the chatbot by getting embeddings and chat history
@@ -20,57 +14,35 @@ class ChatBotSession:
     - store_message() -> Stores both the user's prompt and deepseek's reply in the database.
     """
 
-    def __init__(self, db: AsyncSession, chat: ChatRequest, website: Website):
+    def __init__(self, db: AsyncSession, website: Website):
         self.db = db
         self.website = website
-        self.chat = chat
-        self.chat_service = ChatService(db=db, website=website)
-        self.embedding_service = EmbeddingService(db=db, website_id=website.id)
+        self.chat_service = ChatService(db=db, website_id=self.website.id)
+        self.langgraph_workflow = Workflow(db=self.db, website_id=self.website.id)
 
-    async def generate_context(self) -> tuple[str, Any]:
-
+    async def handle_chat(self, chat_request: ChatRequest):
         try:
-            chat_history = await self.chat_service.get_chat_history(chat=self.chat)
-            logger.info("[SUCCESS] Created chat history")
+            # Store user message to db #
+            user_message = await self.chat_service.create_user_prompt(chat=chat_request)
+            logger.info("[SUCCESS] User message stored to db")
 
-            formatted_history = format_chat_history(chat_history)
-            logger.info(f"CHAT HISTORY: {formatted_history}")
+            # Run langgraph workflow #
+            initial_state = {
+                "user_query": chat_request.message,
+                "session_id": chat_request.session_id,
+            }
 
-            overseer = Overseer(history=formatted_history, user_prompt=self.chat.message)
-            search_plan = await overseer.run_agent()
-            logger.info(f"[SUCCESS] Overseer generated a search plan: {search_plan}")
+            workflow_result = await self.langgraph_workflow.run(initial_state=initial_state)
+            final_response = workflow_result.get("final_response", "")
+            logger.info("[SUCCESS] Workflow completed.")
 
-            context = await self.embedding_service.hybrid_search(search_plan=search_plan)
-            logger.info(f"Final context: {context}")
+            assistant_message = await self.chat_service.create_assistant_reply(chat=chat_request, reply=final_response)
+            logger.info("[SUCCESS] Assistant message stored to db")
 
-            return context, formatted_history
-
+            return user_message, assistant_message
         except Exception as e:
-            logger.error(f"[ERROR] {e}")
+            logger.error(f"Chat proccessing error: {e}")
             raise
-
-    async def generate_and_store_reply(self) -> tuple[Chat, Chat]:
-        try:
-            full_context, formatted_history = await self.generate_context()
-
-            deepseek_chatbot = DeepseekChatbot(context=full_context, history=formatted_history, current_prompt=self.chat.message)
-            deepseek_reply = await deepseek_chatbot.run_agent()
-            logger.info("[SUCCESS] Deepseek generated a reply")
-
-            user_message = await self.chat_service.create_user_prompt(chat=self.chat)
-            logger.info(f"[SUCCESS] Created new user prompt")
-
-            assistant_reply = await self.chat_service.create_deepseek_reply(chat=self.chat, reply=deepseek_reply.response)
-            logger.info("[SUCCESS] Deepseek's reply stored in database")
-
-            return user_message, assistant_reply
-
-        except Exception as e:
-            logger.error(f"[ERROR] {e}")
-            raise
-
-
-
 
 
 

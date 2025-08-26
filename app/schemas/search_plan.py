@@ -5,4 +5,4 @@ class RagQueries(BaseModel):
     keyword: list[list[str]] = Field(description="Keyword search queries for full-text search, structured as a list of keyword lists")
 
 class SearchPlan(BaseModel):
-    rag_queries: RagQueries = Field(description="Queries to use for semantic and keyword searches")
+    rag_queries: RagQueries = Field(description="List of queries to use for semantic and keyword searches")

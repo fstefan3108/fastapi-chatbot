@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     openrouter_api_key: str
     api_url: str
     redis_url: str
-
+    base_url: str
     model_config = SettingsConfigDict(env_file=".env")
 
 settings = Settings()

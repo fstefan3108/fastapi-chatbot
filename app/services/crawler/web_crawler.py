@@ -9,7 +9,6 @@ from app.core.logger import logger
 from app.services.crawler.sitemap_extract import SitemapExtractor
 from app.utils.normalize_url import normalize_url
 
-
 class WebCrawler:
     """
     A class for crawling web pages in parallel using Crawl4AI.

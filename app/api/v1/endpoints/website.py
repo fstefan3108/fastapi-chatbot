@@ -8,7 +8,6 @@ from app.api.deps import db_dependency, user_dependency
 ### Router Declaration ###
 router = APIRouter()
 
-
 ### endpoint for adding websites - takes in request body that comes from streamlit frontend as a pydantic scheme, ###
 ### db: db_dependency for adding the website to the database and user dependency to authenticate user before creating the website. ###
 ### after the URL is entered, the scraper function runs, takes in the url sent through streamlit front and saves the scraped content ###
