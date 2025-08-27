@@ -15,7 +15,7 @@ class Overseer:
         self.history = history
         self.user_prompt = user_prompt
         self.model = OpenAIModel(
-            "openrouter/horizon-beta",
+            "mistralai/mistral-7b-instruct",
             provider="openrouter"
         )
 

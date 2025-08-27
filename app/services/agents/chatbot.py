@@ -21,7 +21,7 @@ class DeepseekChatbot:
         self.current_prompt = current_prompt
         instructions = self._get_instructions()
         self.model = OpenAIModel(
-            "openrouter/horizon-beta",
+            "mistralai/mistral-7b-instruct",
             provider="openrouter"
         )
         self.chatbot_llm = Agent(
