@@ -36,12 +36,16 @@ class ChatBotSession:
             final_response = workflow_result.get("final_response", "")
             logger.info("[SUCCESS] Workflow completed.")
 
-            assistant_message = await self.chat_service.create_assistant_reply(chat=chat_request, reply=final_response)
+            assistant_message = await self.chat_service.create_assistant_reply(
+                session_id=chat_request.session_id,
+                reply=final_response
+            )
             logger.info("[SUCCESS] Assistant message stored to db")
 
             return user_message, assistant_message
+
         except Exception as e:
-            logger.error(f"Chat proccessing error: {e}")
+            logger.error(f"Chat processing error: {e}")
             raise
 
 

@@ -5,7 +5,6 @@ from pydantic import BaseModel
 class ChatRequest(BaseModel):
     message: str
     session_id: UUID
-    website_id: int
 
 class ChatResponse(BaseModel):
     role: str
@@ -21,5 +20,8 @@ class FullChatResponse(BaseModel):
     user_message: ChatResponse
     assistant_reply: ChatResponse
 
-class ChatCreate(ChatRequest):
+class ChatCreate(BaseModel):
+    message: str
+    session_id: UUID
     role: str
+    website_id: int

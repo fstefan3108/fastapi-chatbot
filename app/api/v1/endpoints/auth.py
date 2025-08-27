@@ -21,7 +21,6 @@ async def create_user(user: UserRequest, db: db_dependency):
     new_user = await user_service.create_user(user=user)
     return UserResponse.model_validate(new_user)
 
-
 ### Authenticates the user and creates the JWT access token with user info (username and user_id) for said user. ###
 
 @router.post("/login", status_code=status.HTTP_200_OK, response_model=Token)

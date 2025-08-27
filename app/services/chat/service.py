@@ -12,23 +12,24 @@ class ChatService:
 
     @db_transactional_async
     async def create_user_prompt(self, chat: ChatRequest) -> Chat:
-        chat_data = chat.model_dump()
-        chat_data.update({
+        chat_data = {
+            "message": chat.message,
+            "session_id": chat.session_id,
             "role": "user",
             "website_id": self.website_id,
-        })
+        }
         chat_create = ChatCreate(**chat_data)
         message = await crud_chat.create(db=self.db, data=chat_create.model_dump())
         return message
 
     @db_transactional_async
-    async def create_assistant_reply(self, chat: ChatRequest, reply: str) -> Chat:
-        chat_data = chat.model_dump()
-        chat_data.update({
-            "role": "assistant",
+    async def create_assistant_reply(self, session_id: UUID, reply: str) -> Chat:
+        chat_data = {
             "message": reply,
+            "session_id": session_id,
+            "role": "assistant",
             "website_id": self.website_id,
-        })
+        }
         chat_create = ChatCreate(**chat_data)
         deepseek_reply = await crud_chat.create(db=self.db, data=chat_create.model_dump())
         return deepseek_reply

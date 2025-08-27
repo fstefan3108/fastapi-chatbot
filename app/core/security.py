@@ -19,7 +19,7 @@ async def authenticate_user(username: str, password: str, db: db_dependency):
 
     if not user:
         return None
-    if not asyncio.to_thread(bcrypt_context.verify, password, user.hashed_password):
+    if not await asyncio.to_thread(bcrypt_context.verify, password, user.hashed_password):
         return None
     return user
 
@@ -38,7 +38,6 @@ def create_access_token(username: str, user_id: int, expires_delta: timedelta):
 
 async def hash_password(password: str) -> str:
     return await asyncio.to_thread(bcrypt_context.hash, password)
-
 
 async def get_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):
     user = await authenticate_user(form_data.username, form_data.password, db)

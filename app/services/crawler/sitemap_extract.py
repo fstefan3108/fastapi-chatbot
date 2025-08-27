@@ -1,9 +1,7 @@
 import httpx
 from xml.etree import ElementTree
 from urllib.parse import urljoin, urlparse
-
 from app.core.logger import logger
-
 
 class SitemapExtractor:
     """
@@ -25,7 +23,7 @@ class SitemapExtractor:
             if urls := await self._fetch_sitemap_urls(sitemap_url):
 
                 logger.info(f"Found {len(urls)} URLs in sitemap: {sitemap_url}")
-                return self.filter_urls_by_domain(urls, base_url) # No need to push to thread - lightweight #
+                return urls # No need to push to thread - lightweight #
 
         logger.info(f"No sitemap found for: {base_url}")
         return []
