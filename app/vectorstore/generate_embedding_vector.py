@@ -1,6 +1,6 @@
 import asyncio
-from app.vectorstore.sentence_transformer import get_sentence_transformer
 import numpy as np
+from app.vectorstore.sentence_transformer import get_sentence_transformer
 
 def normalize(v: list[float]) -> list[float]:
     norm = np.linalg.norm(v)

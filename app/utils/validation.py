@@ -10,7 +10,10 @@ async def check_username(user, db: db_dependency):
     if existing_user is not None:
         raise HTTPException(status_code=409, detail="Username already taken.")
 
-async def check_website(url: str, db: db_dependency):
-    existing_website = await crud_website.get_single(db=db, criteria=Website.url == url)
+async def check_website(url: str, db: db_dependency, user_id: int):
+    existing_website = await crud_website.get_single(
+        db=db,
+        criteria=(Website.url == url) & (Website.owner_id == user_id)
+    )
     if existing_website is not None:
         raise HTTPException(status_code=409, detail="Website already exists.")

@@ -10,7 +10,7 @@ class Website(Base):
     __tablename__ = 'websites'
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String, nullable=False)
-    url: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    url: Mapped[str] = mapped_column(String, nullable=False, index=True)
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
     api_key: Mapped[str] = mapped_column(
         String,

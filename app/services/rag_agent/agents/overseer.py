@@ -8,7 +8,7 @@ from app.services.rag_agent.schemas import OverseerOutput, OverseerResponse
 class Overseer:
     def __init__(self):
         self.llm = ChatOpenAI(
-            model="mistralai/mistral-7b-instruct:free",
+            model="qwen/qwen3-vl-30b-a3b-thinking",
             base_url=settings.base_url,
             api_key=settings.openrouter_api_key
         )
@@ -27,6 +27,7 @@ class Overseer:
             result = self.output_parser.parse(response.content)
 
             return {
+                "route": result.route,
                 "reasoning": result.reasoning,
                 "formatted_query": result.formatted_query,
                 "search_plan": result.search_plan
@@ -35,10 +36,11 @@ class Overseer:
             # Fallback logic #
             print(f"[ERROR] Error occurred - using fallback logic: {e}")
             return {
+                "route": "website_related",
                 "formatted_query": user_query,
                 "search_plan": SearchPlan(rag_queries=RagQueries(
                     semantic=user_query,
-                    keyword=[[word] for word in user_query.split()[:3]]
+                    keyword=[[word] for word in user_query.split()[3:]]
                     )
                 ),
                 "reasoning": "Failed to parse response, using fallback"

@@ -19,7 +19,7 @@ class SitemapExtractor:
         sitemap_paths = ['/sitemap.xml', '/sitemap_index.xml', '/sitemap.xml.gz']
 
         for sitemap_path in sitemap_paths:
-            sitemap_url = urljoin(str(base_url), sitemap_path) # Joins base url with sitemap paths #
+            sitemap_url = urljoin(base_url, sitemap_path) # Joins base url with sitemap paths #
             if urls := await self._fetch_sitemap_urls(sitemap_url):
 
                 logger.info(f"Found {len(urls)} URLs in sitemap: {sitemap_url}")

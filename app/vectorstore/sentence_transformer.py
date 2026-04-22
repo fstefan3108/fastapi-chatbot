@@ -5,5 +5,5 @@ _embedding_fn = None
 def get_sentence_transformer():
     global _embedding_fn
     if _embedding_fn is None:
-        _embedding_fn = SentenceTransformer("all-MiniLM-L6-v2")
+        _embedding_fn = SentenceTransformer("tomaarsen/static-similarity-mrl-multilingual-v1", trust_remote_code=True)
     return _embedding_fn

@@ -21,7 +21,7 @@ class EmbeddingService:
                 chunk_metadata=metadata
             )
             new_embedding = await crud_embedding.create(db=self.db, data=embedding_create.model_dump())
-            logger.info("[SUCCESS] Embeddings created and stored succesfully.")
+            logger.info("[SUCCESS] Embeddings created and stored successfully.")
             return new_embedding
         except Exception as e:
             logger.error(f"[ERROR] Error creating embedding: {e}")

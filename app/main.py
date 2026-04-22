@@ -1,7 +1,16 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.api.v1.api import v1_router
+from app.vectorstore.sentence_transformer import get_sentence_transformer
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Loading embedding model at startup...")
+    get_sentence_transformer()
+    print("Embedding model loaded and cached!")
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/healthy")
 async def healthy():

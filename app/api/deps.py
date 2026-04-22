@@ -22,7 +22,7 @@ db_dependency = Annotated[AsyncSession, Depends(get_async_db)]
 ### Gets the current logged user by decoding the JWT token; ###
 ### Extracts user's username and ID from the JWT package, using provided key and algorithm. ###
 
-oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/v1/auth/token")
+oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/v1/auth/login")
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)], db: db_dependency):
     try:

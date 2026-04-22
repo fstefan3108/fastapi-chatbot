@@ -1,27 +1,25 @@
 from pydantic import HttpUrl
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.crud_website import crud_website
-from app.models import User
 from app.models.website import Website
 from app.schemas.website import WebsiteCreate, WebsiteRequest
 from app.utils.db_transaction import db_transactional_async
 
-
 class WebsiteService:
-    def __init__(self, db: AsyncSession, user: User):
+    def __init__(self, db: AsyncSession, user_id: int):
         self.db = db
-        self.user = user
+        self.user_id = user_id
 
     async def get_websites(self) -> list[Website]:
-        websites = await crud_website.get_all(db=self.db, criteria=Website.owner_id == self.user.id)
+        websites = await crud_website.get_all(db=self.db, criteria=Website.owner_id == self.user_id)
         return websites
 
     @db_transactional_async
-    async def create_website(self, title: str, url: HttpUrl) -> Website:
+    async def create_website(self, title: str, url: str) -> Website:
         website_create = WebsiteCreate(
-            **WebsiteRequest(url=url).model_dump(),
+            **WebsiteRequest(url=HttpUrl(url)).model_dump(),
             title=title,
-            owner_id=self.user.id
+            owner_id=self.user_id
         )
 
         data_dict = website_create.model_dump()
@@ -36,8 +34,8 @@ class WebsiteService:
 
     @db_transactional_async
     async def delete_website_by_id(self, id: int) -> None:
-        await crud_website.delete(db=self.db, criteria=(Website.id == id) & (Website.owner_id == self.user.id))
+        await crud_website.delete(db=self.db, criteria=(Website.id == id) & (Website.owner_id == self.user_id))
 
     @db_transactional_async
     async def delete_all_websites(self) -> None:
-        await crud_website.delete(db=self.db, criteria=(Website.owner_id == self.user.id))
+        await crud_website.delete(db=self.db, criteria=(Website.owner_id == self.user_id))

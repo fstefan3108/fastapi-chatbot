@@ -5,7 +5,7 @@ from app.services.rag_agent.prompts.summarizer import SUMMARIZER_PROMPT
 class Summarizer:
     def __init__(self):
         self.llm = ChatOpenAI(
-            model="mistralai/mistral-7b-instruct:free",
+            model="qwen/qwen3-vl-30b-a3b-thinking",
             base_url = settings.base_url,
             api_key = settings.openrouter_api_key
         )

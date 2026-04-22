@@ -14,7 +14,6 @@ router = APIRouter()
 ### creates a new user based on a User Pydantic scheme (User_Request) ###
 ### hashes the password with bcrypt_content.hash(), adds user to DB ###
 
-
 @router.post("/register", status_code=status.HTTP_201_CREATED, response_model=UserResponse)
 async def create_user(user: UserRequest, db: db_dependency):
     user_service = UserService(db=db)

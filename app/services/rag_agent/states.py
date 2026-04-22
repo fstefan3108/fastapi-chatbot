@@ -1,4 +1,4 @@
-from typing import TypedDict, NotRequired, Any
+from typing import TypedDict, NotRequired, Any, Literal, Optional
 from app.schemas.search_plan import SearchPlan
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -8,9 +8,10 @@ class MainState(TypedDict):
     session_id: UUID
 
     # Overseer decisions and output #
+    route: Literal["generic", "website_related"]
     formatted_query: NotRequired[str]
     reasoning: NotRequired[str]
-    search_plan: NotRequired[SearchPlan]  # Only populated if route is hybrid_search
+    search_plan: NotRequired[Optional[SearchPlan]]  # Only populated if route is hybrid_search
 
     # Summarizer Summary #
     summary: NotRequired[str]
@@ -20,4 +21,7 @@ class MainState(TypedDict):
 
     # Final chatbot response #
     final_response: NotRequired[str]
+
+    # Current date and time #
+    current_date: str
 
